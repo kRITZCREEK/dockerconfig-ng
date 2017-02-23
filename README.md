@@ -1,6 +1,8 @@
 dockerconfig-ng
 ===
 
+*Forked from https://github.com/krystianity/dockerconfig*
+
 - easy nodejs config for docker (overwrite with ENV vars)
 - you must not use "_" in your variable names
 - check ./test if you dont understand the readme example (you can run "npm test" to try it)
@@ -69,5 +71,6 @@ Now `dockerconfig.getConfig()` will throw an exception on version-mismatch.
 `bower install && npm install && npm run compile`
 
 ## Authors
-
 - Christoph Hegemann, <christoph.hegemann1337@gmail.com> (smug forker)
+- Christian Fröhlingsdorf, chris@5cf.de (original author)
+- Elmar Athmer, elmar@athmer.org (contributor)
