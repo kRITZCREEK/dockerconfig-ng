@@ -10,7 +10,7 @@ dockerconfig-ng
 ```javascript
 //somewhere in your init script/class
 
-const dockerconfig = require("dockerconfig");
+const dockerconfig = require("dockerconfig-ng");
 
 //myConfigData = { port: 1234, nested: { something: "no" } };
 const myConfigData = require("./config.json");
