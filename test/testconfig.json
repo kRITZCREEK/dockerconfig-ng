@@ -1,0 +1,11 @@
+{
+  "database": {
+    "postgres": {
+      "constring": "youshouldnotseethis"
+    }
+  },
+  "enableFeatureX": "youshouldnotseethis",
+  "wowDude": {
+      "enableFeatureX": "youshouldnotseethis"
+  }
+}

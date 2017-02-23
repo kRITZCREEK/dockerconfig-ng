@@ -1,0 +1,26 @@
+{
+  "name": "dockerconfig-ng",
+  "version": "1.0.0",
+  "description": "dockerconfig done right",
+  "author": "Christoph Hegemann <christoph.hegemann1337@gmail.com>",
+  "license": "MIT",
+  "main": "index.js",
+  "directories": {
+    "lib": "src",
+    "test": "test"
+  },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/kRITZCREEK/dockerconfig-ng.git"
+  },
+  "scripts": {
+    "compile": "psc \"src/**/*.purs\" \"bower_components/purescript-*/src/**/*.purs\"",
+    "prepublish": "rm -rf output && npm run compile",
+    "build": "npm run -s compile",
+    "test": "mocha"
+  },
+  "devDependencies": {
+    "mocha": "3.2.x",
+    "purescript": "0.10.7"
+  }
+}
