@@ -120,23 +120,7 @@ validateConfigVersion json = do
      when (envV < cfgV)
         (throw "NODE_CONFIG_CONFIGVERSION outdated: please update your deployment.")
 
--- | Checks whether any properties overlap when being matched to environment
--- variables
--- validateProperties :: forall e. List Property -> Eff (err :: EXCEPTION | e) Unit
--- validateProperties properties =
---   let
---     result = List.foldl go { accum: StrMap.empty, value: Nil } properties
---     go { accum, value } prop =
---       if StrMap.member (pathToEnvVar prop.path) accum
---       then
---         {accum, value: prop : value}
---       else
---         {accum: StrMap.insert (pathToEnvVar prop.path) unit accum, value}
---   in
---    case result.value of
---      Nil -> pure unit
---      ds -> throw ("Overlapping properties for the following ENV variables: " <> List.intercalate ", " (map (\x -> pathToEnvVar x.path) ds))
-
+-- | Checks whether any property paths overlap when being mapped to environment variables
 checkOverlapping :: forall e. List Path -> Eff (err :: EXCEPTION | e) Unit
 checkOverlapping properties =
   unless (List.null duplicates) do
