@@ -112,7 +112,7 @@ describe("config versioning", () => {
     context("overlapping properties", () => {
         it("detects and errors on overlapping properties", () =>
            assert.throws(
-               () => dockerconfig.getConfig({value: 1481276501, Value: "c"}),
+               () => dockerconfig.getConfig({value: 1481276501, what: {is: {happening: 1}, Is: {HappEning: 2}}, Value: "c"}),
                    /Overlapping properties/));
     })
 });
