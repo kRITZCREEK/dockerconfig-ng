@@ -11,8 +11,10 @@ import Control.Monad.Eff.Exception (EXCEPTION, throw)
 import Data.Argonaut (Json, decodeJson, foldJsonNumber, foldJsonObject, fromObject, jsonParser)
 import Data.Either (either)
 import Data.Foldable (fold)
+import Data.Function (on)
+import Data.List (List(..), (:))
+import Data.List.NonEmpty as NonEmpty
 import Data.Function.Eff (EffFn1, mkEffFn1)
-import Data.List (List(..), mapMaybe, (:))
 import Data.Maybe (Maybe(..))
 import Data.StrMap (StrMap)
 import Data.String (toUpper)
@@ -50,6 +52,7 @@ getConfig' input =
           pure id
   in
    do validateConfigVersion input
+      checkOverlapping (map _.path properties)
       updater <- updates
       pure (List.foldl (<<<) id updater input)
 
@@ -83,7 +86,7 @@ setPathObj (next:following) new json = foldJsonObject json nextLevel json
 
 getProperties :: Json -> List Property
 getProperties json =
-  mapMaybe
+  List.mapMaybe
     (\path -> {path, value: _} <$> lookupPathObj path json)
     (getPaths json)
 
@@ -116,3 +119,37 @@ validateConfigVersion json = do
         (throw "NODE_CONFIG_CONFIGVERSION newer than configVersion: please update your image.")
      when (envV < cfgV)
         (throw "NODE_CONFIG_CONFIGVERSION outdated: please update your deployment.")
+
+-- | Checks whether any properties overlap when being matched to environment
+-- variables
+-- validateProperties :: forall e. List Property -> Eff (err :: EXCEPTION | e) Unit
+-- validateProperties properties =
+--   let
+--     result = List.foldl go { accum: StrMap.empty, value: Nil } properties
+--     go { accum, value } prop =
+--       if StrMap.member (pathToEnvVar prop.path) accum
+--       then
+--         {accum, value: prop : value}
+--       else
+--         {accum: StrMap.insert (pathToEnvVar prop.path) unit accum, value}
+--   in
+--    case result.value of
+--      Nil -> pure unit
+--      ds -> throw ("Overlapping properties for the following ENV variables: " <> List.intercalate ", " (map (\x -> pathToEnvVar x.path) ds))
+
+checkOverlapping :: forall e. List Path -> Eff (err :: EXCEPTION | e) Unit
+checkOverlapping properties =
+  unless (List.null duplicates) do
+    throw ("Overlapping properties in dockerconfig:\n" <>
+           List.intercalate "\n"
+             (map
+              (NonEmpty.toList
+               >>> map (\dup -> List.intercalate "." dup)
+               >>> List.intercalate ", ")
+              duplicates))
+  where
+   duplicates =
+     properties
+     # List.sortBy (compare `on` pathToEnvVar)
+     # List.groupBy ((==) `on` pathToEnvVar)
+     # List.filter (NonEmpty.length >>> (_ > 1))

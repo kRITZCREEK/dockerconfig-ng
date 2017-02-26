@@ -6,6 +6,8 @@ const assert = require("assert");
 
 describe("config versioning", () => {
 
+    afterEach(() => delete process.env["NODE_CONFIG_CONFIGVERSION"]);
+
     context("no config version given", () => {
         const config = dockerconfig.getConfig({a: "b"});
 
@@ -106,4 +108,11 @@ describe("config versioning", () => {
             )
         );
     });
+
+    context("overlapping properties", () => {
+        it("detects and errors on overlapping properties", () =>
+           assert.throws(
+               () => dockerconfig.getConfig({value: 1481276501, Value: "c"}),
+                   /Overlapping properties/));
+    })
 });
