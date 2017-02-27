@@ -2,7 +2,9 @@ module Dockerconfig (getConfig) where
 
 import Prelude
 import Data.List as List
+import Data.List.NonEmpty as NonEmpty
 import Data.StrMap as StrMap
+import Data.String as String
 import Ansi.Codes (Color(..))
 import Ansi.Output (foreground, withGraphics)
 import Control.Monad.Eff (Eff)
@@ -10,18 +12,16 @@ import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION, throw)
 import Data.Argonaut (Json, decodeJson, foldJsonNumber, foldJsonObject, fromObject, jsonParser)
 import Data.Either (either)
-import Data.Foldable (fold)
+import Data.Foldable (elem, fold)
 import Data.Function (on)
-import Data.List (List(..), (:))
-import Data.List.NonEmpty as NonEmpty
 import Data.Function.Eff (EffFn1, mkEffFn1)
+import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.StrMap (StrMap)
-import Data.String (toUpper)
 import Data.Traversable (for)
 import Data.Tuple (Tuple(..))
 import Global.Unsafe (unsafeStringify)
-import Node.Process (PROCESS, lookupEnv)
+import Node.Process (PROCESS, getEnv, lookupEnv)
 
 type Property = { path :: Path, value :: Json }
 type Path = List String
@@ -52,19 +52,23 @@ getConfig' input =
           pure id
   in
    do validateConfigVersion input
-      checkOverlapping (map _.path properties)
+      checkRedundantEnv (map _.path properties) =<< getEnv
+      checkOverlappingProps (map _.path properties)
       updater <- updates
       pure (List.foldl (<<<) id updater input)
 
 logPurple :: forall e. String -> Eff (console :: CONSOLE | e) Unit
 logPurple = withGraphics log (foreground Magenta)
 
+logWarn :: forall e. String -> Eff (console :: CONSOLE | e) Unit
+logWarn = withGraphics log (foreground Yellow) <<< ("[WARN - dockerconfig] "<> _)
+
 getKeyCI :: forall a. StrMap a -> String -> Maybe String
 getKeyCI obj key =
-  StrMap.keys obj # List.find \key' -> toUpper key' == toUpper key
+  StrMap.keys obj # List.find \key' -> String.toUpper key' == String.toUpper key
 
 pathToEnvVar :: Path -> String
-pathToEnvVar = map toUpper >>> List.intercalate "_" >>> ("NODE_CONFIG_" <> _)
+pathToEnvVar = map String.toUpper >>> List.intercalate "_" >>> ("NODE_CONFIG_" <> _)
 
 lookupPathObj :: Path -> Json -> Maybe Json
 lookupPathObj Nil json = Just json
@@ -121,8 +125,8 @@ validateConfigVersion json = do
         (throw "NODE_CONFIG_CONFIGVERSION outdated: please update your deployment.")
 
 -- | Checks whether any property paths overlap when being mapped to environment variables
-checkOverlapping :: forall e. List Path -> Eff (err :: EXCEPTION | e) Unit
-checkOverlapping properties =
+checkOverlappingProps :: forall e. List Path -> Eff (err :: EXCEPTION | e) Unit
+checkOverlappingProps properties =
   unless (List.null duplicates) do
     throw ("Overlapping properties in dockerconfig:\n" <>
            List.intercalate "\n"
@@ -137,3 +141,17 @@ checkOverlapping properties =
      # List.sortBy (compare `on` pathToEnvVar)
      # List.groupBy ((==) `on` pathToEnvVar)
      # List.filter (NonEmpty.length >>> (_ > 1))
+
+-- | Checks whether any Environment variables prefixed with DOCKER_CONFIG did not
+-- | match a property
+checkRedundantEnv :: forall a e. List Path -> StrMap a -> Eff (console :: CONSOLE | e) Unit
+checkRedundantEnv paths env =
+  unless (List.null redundantEnvVars)
+    (logWarn ("Didn't find any properties to update with these environment variables: " <> List.intercalate ", " redundantEnvVars))
+  where
+    redundantEnvVars = env
+                       # StrMap.keys
+                       # List.fromFoldable
+                       # List.filter ((_ == Just 0) <<< String.indexOf (String.Pattern "NODE_CONFIG"))
+                       # List.filter (not <<< (_ `elem` mappedPaths))
+    mappedPaths = map pathToEnvVar paths
