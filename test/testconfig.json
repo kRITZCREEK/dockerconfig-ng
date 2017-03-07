@@ -7,5 +7,10 @@
   "enableFeatureX": "youshouldnotseethis",
   "wowDude": {
       "enableFeatureX": "youshouldnotseethis"
+  },
+  "just": {
+      "a": {
+          "string": "youshouldnotseethis"
+      }
   }
 }

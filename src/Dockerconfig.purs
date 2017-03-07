@@ -10,7 +10,7 @@ import Ansi.Output (foreground, withGraphics)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION, throw)
-import Data.Argonaut (Json, decodeJson, foldJsonNumber, foldJsonObject, fromObject, jsonParser)
+import Data.Argonaut (Json, decodeJson, foldJsonNumber, foldJsonObject, fromObject, fromString, jsonParser)
 import Data.Either (either)
 import Data.Foldable (elem, fold)
 import Data.Function (on)
@@ -47,7 +47,7 @@ getConfig' input =
                 , "] with [new content..(secret)]"
                 ]
           logPurple msg
-          setPathObj path <$> either throw pure (jsonParser new)
+          setPathObj path <$> either (\_ -> pure (fromString new)) pure (jsonParser new)
         Nothing ->
           pure id
   in
