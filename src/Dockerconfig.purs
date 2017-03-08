@@ -47,7 +47,7 @@ getConfig' input =
                 , "] with [new content..(secret)]"
                 ]
           logPurple msg
-          setPathObj path <$> either (\_ -> pure (fromString new)) pure (jsonParser new)
+          pure (setPathObj path (either (const (fromString new)) id (jsonParser new)))
         Nothing ->
           pure id
   in
