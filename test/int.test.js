@@ -25,7 +25,7 @@ describe("dockerconfig", () => {
     it("sets config values with nested uppercase letters", () =>
        assert.deepEqual(CONFIG.wowDude.enableFeatureX, true)
       );
-    it("sets config values with nested uppercase letters", () =>
+    it("sets config values as a string if the ENV var doesn't parse as valid JSON", () =>
        assert.equal(CONFIG.just.a.string, "hello")
       );
 });
