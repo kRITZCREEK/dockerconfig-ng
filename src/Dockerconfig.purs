@@ -11,7 +11,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION, throw)
 import Data.Argonaut (Json, decodeJson, foldJsonNumber, foldJsonObject, fromObject, fromString, jsonParser)
-import Data.Either (either)
+import Data.Either (Either, either)
 import Data.Foldable (elem, fold)
 import Data.Function (on)
 import Data.Function.Eff (EffFn1, mkEffFn1)
@@ -47,7 +47,7 @@ getConfig' input =
                 , "] with [new content..(secret)]"
                 ]
           logPurple msg
-          pure (setPathObj path (either (const (fromString new)) id (jsonParser new)))
+          pure (setPathObj path (foldRight (fromString new) (jsonParser new)))
         Nothing ->
           pure id
   in
@@ -155,3 +155,7 @@ checkRedundantEnv paths env =
                        # List.filter ((_ == Just 0) <<< String.indexOf (String.Pattern "NODE_CONFIG"))
                        # List.filter (not <<< (_ `elem` mappedPaths))
     mappedPaths = map pathToEnvVar paths
+
+-- Helpers
+foldRight :: forall a b. b -> Either a b -> b
+foldRight l = either (const l) id
