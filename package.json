@@ -1,6 +1,6 @@
 {
   "name": "dockerconfig-ng",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "dockerconfig done right",
   "author": "Christoph Hegemann <christoph.hegemann1337@gmail.com>",
   "license": "MIT",
